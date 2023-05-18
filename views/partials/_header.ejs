@@ -9,14 +9,11 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-
-        <% if (!username || username === "undefined") { %>
-          <form action="/login" method="POST">
-            <input type="text" name="username" placeholder="Username" />
-            <button type="submit" class="btn btn-primary">Submit</button>
-          </form>
+        <% if (!user || user === "undefined") { %>
+          <a class="nav-item nav-link" href="/register">Register</a>
+          <a class="nav-item nav-link" href="/login">Log in</a>
           <% } else { %>
-            <p> Hello <%= username %>! </p>
+            <p class="nav-item" > Hello <%= user.email %>! </p>
             <form action="/logout" method="POST">
               <button type="submit" class="btn btn-primary">Log Out</button>
             </form>
