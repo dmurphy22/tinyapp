@@ -74,7 +74,7 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   let id = req.session.user_id;
   if (!id)
-    return res.redirect("/register");
+    return res.status(403).send("Please login to view your URLS");
   const user = users[id];
   const filteredURLs = urlsForUser(urlDatabase, user);
 
