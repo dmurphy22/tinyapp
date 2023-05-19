@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require('morgan');
 const bcrypt = require("bcryptjs");
+const {generateRandomString, getUserByEmail, urlsForUser} = require("./helpers.js");
 const app = express();
 const cookieSession = require('cookie-session');
 const PORT = 8080; // default port 8080
@@ -69,7 +70,7 @@ app.get("/urls", (req, res) => {
 
 
 
-  const filteredURLs = urlsForUser(user);
+  const filteredURLs = urlsForUser(urlDatabase,user);
 
   const templateVars = { user: user, urls: filteredURLs, uid: id };
   res.render("urls_index", templateVars);
@@ -219,44 +220,3 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-const generateRandomString = function(length) {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charactersLength);
-    result += characters.charAt(randomIndex);
-  }
-
-  return result;
-
-};
-
-const getUserByEmail = function(usersDB, email) {
-
-  for (const userId in usersDB) {
-    const user = usersDB[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-
-};
-
-const urlsForUser = function(user) {
-  let filteredURLs = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === user.id) {
-      let filtered = {
-        longURL: urlDatabase[url].longURL,
-        userID: urlDatabase[url].userID
-      };
-      filteredURLs[url] = filtered;
-    }
-  }
-  return filteredURLs;
-};
