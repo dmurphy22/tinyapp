@@ -10,9 +10,16 @@ app.use(cookieParser());
 app.use(morgan('dev'));
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "userRandomID",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
+
 
 const users = {
   userRandomID: {
@@ -38,6 +45,10 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+app.get("/users.json", (req, res) => {
+  res.json(users);
+});
+
 
 
 app.get("/hello", (req, res) => {
@@ -52,13 +63,19 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   let id = req.cookies["user_id"];
   const user = users[id];
-  const templateVars = { user: user, urls: urlDatabase };
+
+  const filteredURLs = urlsForUser(user);
+
+  const templateVars = { user: user, urls: filteredURLs, uid: id };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   let id = req.cookies["user_id"];
+  if (!id)
+    return res.redirect("/urls");
   const user = users[id];
+
   const templateVars = { user: user, urls: urlDatabase };
   res.render("urls_new", templateVars);
 });
@@ -66,12 +83,25 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   let id = req.cookies["user_id"];
   const user = users[id];
-  const templateVars = { user: user, urls: urlDatabase };
+
+  const url = urlDatabase[req.params.id];
+
+  if (!url) {
+    return res.status(404).send("No such URL");
+  }
+
+  if (user.id !== url.userID) {
+    return res.status(403).send("Forbidden");
+  }
+
+  const templateVars = { user: user, id: req.params.id, longURL: url.longURL};
   res.render("urls_show", templateVars);
 });
 
 app.get('/register', (req, res) => {
   let id = req.cookies["user_id"];
+  if (id)
+    return res.redirect("/urls");
   const user = users[id];
   const templateVars = { user: user, urls: urlDatabase };
   res.render("register", templateVars);
@@ -79,18 +109,34 @@ app.get('/register', (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
+  if (!longURL)
+    return res.status(404).send("Not Found!");
   res.redirect(longURL);
 });
 
 app.post("/urls", (req, res) => {
+  let uid = req.cookies["user_id"];
+  if (!uid)
+    return res.status(403).send("Forbidden!");
+
+  let obj = {
+    longURL: req.body["longURL"],
+    userID: uid
+  };
+  
   const genID = generateRandomString(6);
-  urlDatabase[genID] = req.body["longURL"];
+  urlDatabase[genID] = obj;
 
   res.redirect(`/urls/${genID}`); // Respond with 'Ok' (we will replace this)
 });
 
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
+  let uid = req.cookies["user_id"];
+  const url = urlDatabase[id];
+  const user = users[uid];
+  if (!uid || user.id !== url.userID)
+    return res.status(403).send("Forbidden!");
 
   if (urlDatabase[id])
     delete urlDatabase[id];
@@ -99,9 +145,17 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.post("/urls/:id/update", (req, res) => {
   const id = req.params.id;
+  let uid = req.cookies["user_id"];
+  if (!uid)
+    return res.status(403).send("Forbidden!");
+
+  let obj = {
+    longURL: req.body["longURL"],
+    userID: uid
+  };
 
   if (urlDatabase[id])
-    urlDatabase[id] = req.body["longURL"];
+    urlDatabase[id] = obj;
   res.redirect("back");
 });
 
@@ -190,4 +244,18 @@ const getUserByEmail = function(email) {
       return user;
   }
 
+};
+
+const urlsForUser = function(user) {
+  let filteredURLs = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === user.id) {
+      let filtered = {
+        longURL: urlDatabase[url].longURL,
+        userID: urlDatabase[url].userID
+      };
+      filteredURLs[url] = filtered;
+    }
+  }
+  return filteredURLs;
 };
