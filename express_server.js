@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require('morgan');
 const bcrypt = require("bcryptjs");
+const methodOverride = require('method-override');
 const {generateRandomString, getUserByEmail, urlsForUser} = require("./helpers.js");
 const app = express();
 const cookieSession = require('cookie-session');
@@ -9,6 +10,7 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(methodOverride('_method'));
 
 app.use(cookieSession({
   name: 'session',
@@ -136,7 +138,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${genID}`); // Respond with 'Ok' (we will replace this)
 });
 
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   let uid = req.session.user_id;
   const url = urlDatabase[id];
@@ -149,7 +151,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:id/update", (req, res) => {
+app.put("/urls/:id/update", (req, res) => {
   const id = req.params.id;
   let uid = req.session.user_id;
   if (!uid)
