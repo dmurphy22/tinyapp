@@ -75,7 +75,7 @@ app.get("/urls", (req, res) => {
   let id = req.session.user_id;
   if (!id || !users[id]) {
     res.clearCookie("session");
-    return res.status(403).send("Please login to view your URLS");
+    return res.status(404).render("error", {error: "Please login to view your URLS"});
   }
   const user = users[id];
   const filteredURLs = urlsForUser(urlDatabase, user);
@@ -109,11 +109,11 @@ app.get("/urls/:id", (req, res) => {
   const url = urlDatabase[req.params.id];
 
   if (!url) {
-    return res.status(404).send("No such URL");
+    return res.status(404).render("error", {error: "No such URL"});
   }
 
   if (!user || user.id !== url.userID) {
-    return res.status(403).send("Forbidden");
+    return res.status(404).render("error", {error: "Forbidden"});
   }
 
   const uniqueVisitors = visits[req.params.id] ? visits[req.params.id].size : 0;
@@ -135,7 +135,7 @@ app.get("/u/:id", (req, res) => {
   const url = urlDatabase[req.params.id];
 
   if (!url)
-    return res.status(404).send("Not Found!");
+    return res.status(404).render("error", {error: "Not Found!"});
 
   const visitorId = req.session.visitor_id;
   if (!visitorId) {
@@ -157,7 +157,7 @@ app.get("/u/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   let uid = req.session.user_id;
   if (!uid)
-    return res.status(403).send("Forbidden!");
+    return res.status(404).render("error", {error: "Forbidden!"});
 
   let obj = {
     longURL: req.body["longURL"],
@@ -177,7 +177,7 @@ app.delete("/urls/:id/delete", (req, res) => {
   const url = urlDatabase[id];
   const user = users[uid];
   if (!uid || user.id !== url.userID)
-    return res.status(403).send("Forbidden!");
+    return res.status(404).render("error", {error: "Forbidden!"});
 
   if (urlDatabase[id])
     delete urlDatabase[id];
@@ -188,7 +188,7 @@ app.put("/urls/:id", (req, res) => {
   const id = req.params.id;
   let uid = req.session.user_id;
   if (!uid)
-    return res.status(403).send("Forbidden!");
+    return res.status(404).render("error", {error: "Forbidden!"});
 
   let obj = {
     longURL: req.body["longURL"],
@@ -216,7 +216,7 @@ app.post("/login", (req, res) => {
 
   const user = getUserByEmail(users, email);
   if (!user || !bcrypt.compareSync(password, user.password))
-    return res.status(403).send("Incorrect username or password.");
+    return res.status(404).render("error", {error: "Incorrect username or password."});
 
   req.session["user_id"] = user.id;
   res.redirect("/urls");
@@ -225,7 +225,8 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
 
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Please enter both a password and an email. ");
+    return res.status(404).render("error", {error: "Please enter both a password and an email."});
+    
   }
 
   const email = req.body.email;
@@ -233,7 +234,8 @@ app.post("/register", (req, res) => {
   const id = generateRandomString(6);
 
   if (getUserByEmail(users, email)) {
-    return res.status(400).send("User email already exists ");
+    return res.status(404).render("error", {error: "User email already exists "});
+    
   }
 
   let user = {};
