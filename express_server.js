@@ -73,8 +73,10 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let id = req.session.user_id;
-  if (!id)
+  if (!id || !users[id]) {
+    res.clearCookie("session");
     return res.status(403).send("Please login to view your URLS");
+  }
   const user = users[id];
   const filteredURLs = urlsForUser(urlDatabase, user);
 
@@ -93,7 +95,7 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   let id = req.session.user_id;
   if (!id)
-    return res.redirect("/urls");
+    return res.redirect("/login");
   const user = users[id];
 
   const templateVars = { user: user, urls: urlDatabase };
@@ -131,7 +133,8 @@ app.get('/register', (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const url = urlDatabase[req.params.id];
-  if (!url.longURL)
+
+  if (!url)
     return res.status(404).send("Not Found!");
 
   const visitorId = req.session.visitor_id;
@@ -158,7 +161,8 @@ app.post("/urls", (req, res) => {
 
   let obj = {
     longURL: req.body["longURL"],
-    userID: uid
+    userID: uid,
+    clicks: 0
   };
   
   const genID = generateRandomString(6);
@@ -180,7 +184,7 @@ app.delete("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-app.put("/urls/:id/update", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   const id = req.params.id;
   let uid = req.session.user_id;
   if (!uid)
@@ -193,11 +197,14 @@ app.put("/urls/:id/update", (req, res) => {
 
   if (urlDatabase[id])
     urlDatabase[id] = obj;
-  res.redirect("back");
+  res.redirect("/urls");
 });
 
 app.get("/login", (req,res) => {
   let id = req.session.user_id;
+  if (id) {
+    res.redirect("/urls");
+  }
   const user = users[id];
   const templateVars = { user: user, urls: urlDatabase };
   res.render("login", templateVars);
@@ -238,7 +245,7 @@ app.post("/register", (req, res) => {
 
   req.session["user_id"] = id;
 
-  res.redirect("back");
+  res.redirect("/urls");
 
 });
 
