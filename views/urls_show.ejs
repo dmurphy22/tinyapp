@@ -20,6 +20,8 @@
             <%= id %>
           </a>
         </p>
+        <p>Clicks: <%= clicks %></p>
+        <p>Unique: <%= uniqueVisitors %></p>
         <p class="card-text">
 
         <form action="/urls/<%= id %>/update?_method=PUT" method="POST">

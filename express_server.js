@@ -24,11 +24,18 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "userRandomID",
+    clicks: 0
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ48lW",
+    clicks: 0
   },
+};
+
+const visits = {
+  timestamp: "",
+  visitorId: ""
 };
 
 
@@ -69,14 +76,19 @@ app.get("/urls", (req, res) => {
   if (!id)
     return res.redirect("/register");
   const user = users[id];
+  const filteredURLs = urlsForUser(urlDatabase, user);
 
+  // Get the number of unique visitors for each URL
+  const uniqueVisitors = {};
+  for (const urlId in urlDatabase) {
+    const visitors = visits[urlId];
+    uniqueVisitors[urlId] = visitors ? visitors.size : 0;
+  }
 
-
-  const filteredURLs = urlsForUser(urlDatabase,user);
-
-  const templateVars = { user: user, urls: filteredURLs, uid: id };
+  const templateVars = { user: user, urls: filteredURLs, uid: id, uniqueVisitors: uniqueVisitors };
   res.render("urls_index", templateVars);
 });
+
 
 app.get("/urls/new", (req, res) => {
   let id = req.session.user_id;
@@ -98,11 +110,13 @@ app.get("/urls/:id", (req, res) => {
     return res.status(404).send("No such URL");
   }
 
-  if (user.id !== url.userID) {
+  if (!user || user.id !== url.userID) {
     return res.status(403).send("Forbidden");
   }
 
-  const templateVars = { user: user, id: req.params.id, longURL: url.longURL};
+  const uniqueVisitors = visits[req.params.id] ? visits[req.params.id].size : 0;
+
+  const templateVars = { user: user, id: req.params.id, longURL: url.longURL, clicks: url.clicks, uniqueVisitors: uniqueVisitors};
   res.render("urls_show", templateVars);
 });
 
@@ -116,11 +130,26 @@ app.get('/register', (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  if (!longURL)
+  const url = urlDatabase[req.params.id];
+  if (!url.longURL)
     return res.status(404).send("Not Found!");
-  res.redirect(longURL);
+
+  const visitorId = req.session.visitor_id;
+  if (!visitorId) {
+    const generatedId = generateRandomString(6);
+    req.session.visitorId = generatedId;
+    visits[req.params.id] = new Set();
+    visits[req.params.id].add(generatedId);
+    url.clicks++;
+  } else if (!visits[req.params.id].has(visitorId)) {
+    visits[req.params.id].add(visitorId);
+    url.clicks++;
+  }
+
+  res.redirect(url.longURL);
 });
+
+
 
 app.post("/urls", (req, res) => {
   let uid = req.session.user_id;

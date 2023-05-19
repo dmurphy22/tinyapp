@@ -30,7 +30,8 @@ const urlsForUser = function(urlDB, user) {
     if (urlDB[url].userID === user.id) {
       let filtered = {
         longURL: urlDB[url].longURL,
-        userID: urlDB[url].userID
+        userID: urlDB[url].userID,
+        clicks: urlDB[url].clicks
       };
       filteredURLs[url] = filtered;
     }
