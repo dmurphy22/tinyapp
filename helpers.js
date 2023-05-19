@@ -20,7 +20,7 @@ const getUserByEmail = function(usersDB, email) {
       return user;
     }
   }
-  return null;
+  return undefined;
 
 };
 
